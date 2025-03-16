@@ -34,8 +34,9 @@ const axiosInstance = axios.create({
 
 // Функция для получения заголовка авторизации
 export const getAuthHeader = () => {
-    const token = getCookie('sessionid');
-    return token ? `Bearer ${token}` : '';
+    // Для SessionAuthentication не нужно явно передавать токен
+    // Куки сессии будут отправлены автоматически с опцией credentials: 'include'
+    return '';
 };
 
 // Функция для проверки статуса авторизации
@@ -82,10 +83,10 @@ export const fetchQuizzes = async () => {
         const response = await fetch(`${API_URL}quizzes/`, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': getAuthHeader()
+                'Content-Type': 'application/json'
+                // Не используем Authorization с Bearer токеном
             },
-            credentials: 'include'
+            credentials: 'include' // Для отправки куки сессии
         });
 
         if (!response.ok) {
@@ -115,11 +116,11 @@ export const createQuiz = async (quizData) => {
 // Получить детали квиза с вопросами
 export const fetchQuizDetails = async (quizId) => {
   try {
-    const response = await fetch(`http://localhost:8000/api/quizzes/${quizId}/details/`, {
+    const response = await fetch(`${API_URL}quizzes/${quizId}/details/`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': getAuthHeader()
+        'Content-Type': 'application/json'
+        // Не используем Authorization
       },
       credentials: 'include'
     });
@@ -138,11 +139,11 @@ export const fetchQuizDetails = async (quizId) => {
 // Получить вопрос квиза по индексу
 export const fetchQuizQuestion = async (quizId, questionIndex) => {
   try {
-    const response = await fetch(`http://localhost:8000/api/quizzes/${quizId}/questions/${questionIndex}/`, {
+    const response = await fetch(`${API_URL}quizzes/${quizId}/questions/${questionIndex}/`, {
       method: 'GET',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': getAuthHeader()
+        'Content-Type': 'application/json'
+        // Не используем Authorization
       },
       credentials: 'include'
     });
@@ -154,6 +155,163 @@ export const fetchQuizQuestion = async (quizId, questionIndex) => {
     return await response.json();
   } catch (error) {
     console.error('Error fetching quiz question:', error);
+    throw error;
+  }
+};
+
+// Функция для сохранения результата теста
+export const saveQuizResult = async (quizId, score, maxScore) => {
+  try {
+    const response = await fetch(`${API_URL}save-quiz-result/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': getCookie('csrftoken') // Добавляем CSRF-токен напрямую
+      },
+      credentials: 'include', // Важно для отправки куки сессии
+      body: JSON.stringify({
+        quiz_id: quizId,
+        score: score,
+        max_score: maxScore
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Ошибка при сохранении результата');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при сохранении результата:', error);
+    throw error;
+  }
+};
+
+// Функция для получения всех результатов пользователя
+export const getUserQuizResults = async () => {
+  try {
+    const response = await fetch(`${API_URL}quiz-results/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+        // Не добавляем заголовок Authorization
+      },
+      credentials: 'include' // Важно для отправки куки сессии
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при получении результатов');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении результатов:', error);
+    throw error;
+  }
+};
+
+// Функция для получения конкретного результата
+export const getQuizResult = async (resultId) => {
+  try {
+    const response = await fetch(`${API_URL}quiz-results/${resultId}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+        // Не добавляем заголовок Authorization
+      },
+      credentials: 'include' // Важно для отправки куки сессии
+    });
+
+    if (!response.ok) {
+      throw new Error('Ошибка при получении результата');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении результата:', error);
+    throw error;
+  }
+};
+
+// --- API функции для администраторов ---
+
+// Получить список всех пользователей (только для админов)
+export const getAllUsers = async () => {
+  try {
+    const response = await fetch(`${API_URL}admin/users/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('У вас нет прав администратора для выполнения этого действия');
+      }
+      throw new Error('Ошибка при получении списка пользователей');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении списка пользователей:', error);
+    throw error;
+  }
+};
+
+// Получить результаты всех пользователей (только для админов)
+export const getAllUsersResults = async (userId = null) => {
+  try {
+    let url = `${API_URL}admin/quiz-results/`;
+    if (userId) {
+      url += `?user_id=${userId}`;
+    }
+
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('У вас нет прав администратора для выполнения этого действия');
+      }
+      throw new Error('Ошибка при получении результатов');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении результатов всех пользователей:', error);
+    throw error;
+  }
+};
+
+// Получить детальную информацию о результате (только для админов)
+export const getAdminQuizResultDetail = async (resultId) => {
+  try {
+    const response = await fetch(`${API_URL}admin/quiz-results/${resultId}/`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      credentials: 'include'
+    });
+
+    if (!response.ok) {
+      if (response.status === 403) {
+        throw new Error('У вас нет прав администратора для выполнения этого действия');
+      }
+      throw new Error('Ошибка при получении детальной информации о результате');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Ошибка при получении детальной информации о результате:', error);
     throw error;
   }
 };

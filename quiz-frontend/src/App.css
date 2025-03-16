@@ -75,3 +75,83 @@
   font-size: 18px;
   color: #666;
 }
+
+/* Стили для навигационной панели */
+.navbar {
+  background-color: #343a40;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 20px;
+  height: 60px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.navbar-brand {
+  font-size: 1.5rem;
+  font-weight: bold;
+}
+
+.navbar-brand a {
+  color: white;
+  text-decoration: none;
+}
+
+.nav-links {
+  display: flex;
+  gap: 20px;
+}
+
+.nav-link {
+  color: #f8f9fa;
+  text-decoration: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.login-button,
+.logout-button {
+  background-color: transparent;
+  border: 1px solid #f8f9fa;
+  color: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.login-button:hover {
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+.logout-button {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.logout-button:hover {
+  background-color: #dc3545;
+  color: white;
+}
+
+.nav-link.admin-link {
+  background-color: rgba(220, 53, 69, 0.1);
+  color: #dc3545;
+  font-weight: 500;
+}
+
+.nav-link.admin-link:hover {
+  background-color: rgba(220, 53, 69, 0.2);
+}

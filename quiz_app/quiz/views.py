@@ -1,13 +1,15 @@
-from rest_framework import generics, permissions
-from .models import Quiz, Question, Answer
-from .serializers import QuizSerializer, QuizDetailSerializer, QuestionSerializer, AnswerSerializer
+from rest_framework import generics, permissions, status
+from .models import Quiz, Question, Answer, QuizResult
+from .serializers import QuizSerializer, QuizDetailSerializer, QuestionSerializer, AnswerSerializer, QuizResultSerializer
 from django.contrib.auth.models import User
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import redirect, get_object_or_404
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.views import APIView
+from django.db.models import Q
 
 def home(request):
     return render(request, 'home.html')  # 'home.html' - путь к вашему шаблону
@@ -48,7 +50,9 @@ def check_auth(request):
             'authenticated': True,
             'username': request.user.username,
             'email': request.user.email,
-            'sessionid': request.session.session_key
+            'sessionid': request.session.session_key,
+            'is_staff': request.user.is_staff,
+            'is_superuser': request.user.is_superuser
         })
     else:
         return JsonResponse({
@@ -129,3 +133,95 @@ def get_question(request, quiz_id, question_index):
     }
     
     return Response(data)
+
+class SaveQuizResult(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def post(self, request):
+        quiz_id = request.data.get('quiz_id')
+        score = request.data.get('score')
+        max_score = request.data.get('max_score')
+        
+        if not all([quiz_id, score is not None, max_score is not None]):
+            return Response(
+                {"error": "Необходимы quiz_id, score и max_score"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            quiz = Quiz.objects.get(id=quiz_id)
+        except Quiz.DoesNotExist:
+            return Response(
+                {"error": "Тест не найден"}, 
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        quiz_result = QuizResult.objects.create(
+            quiz=quiz,
+            user=request.user,
+            score=score,
+            max_score=max_score
+        )
+        
+        serializer = QuizResultSerializer(quiz_result)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+class UserQuizResults(generics.ListAPIView):
+    serializer_class = QuizResultSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        return QuizResult.objects.filter(user=self.request.user).order_by('-completed_at')
+
+class QuizResultDetail(generics.RetrieveAPIView):
+    queryset = QuizResult.objects.all()
+    serializer_class = QuizResultSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        # Пользователь может видеть только свои результаты
+        return QuizResult.objects.filter(user=self.request.user)
+
+# Новые представления для администраторов
+class AdminUserQuizResults(generics.ListAPIView):
+    """
+    API endpoint для получения результатов всех пользователей.
+    Доступно только администраторам.
+    Поддерживает фильтрацию по пользователю через query-параметр 'user_id'.
+    """
+    serializer_class = QuizResultSerializer
+    permission_classes = [IsAdminUser]
+    
+    def get_queryset(self):
+        queryset = QuizResult.objects.all().order_by('-completed_at')
+        
+        # Фильтрация по пользователю, если указан параметр user_id
+        user_id = self.request.query_params.get('user_id', None)
+        if user_id:
+            queryset = queryset.filter(user_id=user_id)
+            
+        return queryset
+
+class AdminQuizResultDetail(generics.RetrieveAPIView):
+    """
+    API endpoint для получения детальной информации о результате теста.
+    Доступно только администраторам.
+    """
+    queryset = QuizResult.objects.all()
+    serializer_class = QuizResultSerializer
+    permission_classes = [IsAdminUser]
+
+class UsersList(generics.ListAPIView):
+    """
+    API endpoint для получения списка пользователей.
+    Доступно только администраторам.
+    Используется для фильтрации результатов тестов по пользователю.
+    """
+    queryset = User.objects.all().order_by('username')
+    permission_classes = [IsAdminUser]
+    
+    def list(self, request, *args, **kwargs):
+        queryset = self.get_queryset()
+        users = [{'id': user.id, 'username': user.username, 'email': user.email} 
+                 for user in queryset]
+        return Response(users)

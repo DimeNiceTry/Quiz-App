@@ -121,6 +121,56 @@ const QuizQuestion = () => {
     }
   };
 
+  // Обработчик кнопки завершения теста
+  const handleFinishQuiz = () => {
+    // Сохраняем текущий ответ в общий массив ответов
+    const finalAnswers = { ...userAnswers };
+    
+    // Добавляем ответ на текущий вопрос, если он выбран
+    if (selectedAnswer && questionData) {
+      finalAnswers[questionData.question.id] = selectedAnswer;
+    }
+    
+    // Сохраняем ответы в sessionStorage
+    sessionStorage.setItem(`quiz_${quizId}_answers`, JSON.stringify(finalAnswers));
+    
+    // Получаем данные о всех вопросах теста
+    const loadAllQuestions = async () => {
+      try {
+        const allQuestions = [];
+        const totalQuestions = questionData.total_questions;
+        
+        // Загружаем все вопросы (можно оптимизировать, если есть API для получения всех вопросов сразу)
+        for (let i = 0; i < totalQuestions; i++) {
+          const questionData = await fetchQuizQuestion(quizId, i);
+          allQuestions.push(questionData.question);
+        }
+        
+        // Перенаправляем на страницу результатов
+        navigate(`/quizzes/${quizId}/results`, {
+          state: {
+            quizId: quizId,
+            quizTitle: questionData.quiz_title,
+            userAnswers: finalAnswers,
+            questions: allQuestions
+          }
+        });
+      } catch (error) {
+        console.error("Ошибка при загрузке всех вопросов:", error);
+        setError("Не удалось загрузить все вопросы для подсчета результатов");
+      }
+    };
+    
+    loadAllQuestions();
+  };
+
+  // Обработчик кнопки досрочного завершения
+  const handleFinish = () => {
+    if (window.confirm('Вы уверены, что хотите завершить тест? Все несохраненные ответы будут потеряны.')) {
+      handleFinishQuiz();
+    }
+  };
+
   if (loading && !questionData) {
     return <div className="loading">Загрузка...</div>;
   }
@@ -174,7 +224,7 @@ const QuizQuestion = () => {
         <button 
           className="nav-button"
           onClick={goToPrevQuestion}
-          disabled={current_index <= 0}
+          disabled={parseInt(questionIndex) <= 0}
         >
           Предыдущий
         </button>
@@ -188,11 +238,29 @@ const QuizQuestion = () => {
             Проверить
           </button>
         ) : (
+          parseInt(questionIndex) + 1 < (questionData?.total_questions || 0) ? (
+            <button 
+              className="next-button"
+              onClick={goToNextQuestion}
+            >
+              Следующий
+            </button>
+          ) : (
+            <button 
+              className="finish-button"
+              onClick={handleFinishQuiz}
+            >
+              Завершить тест
+            </button>
+          )
+        )}
+        
+        {parseInt(questionIndex) + 1 < (questionData?.total_questions || 0) && (
           <button 
-            className="next-button"
-            onClick={goToNextQuestion}
+            className="early-finish-button"
+            onClick={handleFinish}
           >
-            {parseInt(current_index) + 1 < total_questions ? 'Следующий' : 'Завершить тест'}
+            Завершить досрочно
           </button>
         )}
       </div>

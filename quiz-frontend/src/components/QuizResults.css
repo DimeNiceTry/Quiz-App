@@ -203,4 +203,144 @@
   background-color: #ffebee;
   border-radius: 4px;
   margin: 20px 0;
+}
+
+/* Стили для истории результатов */
+.results-list {
+  width: 100%;
+  margin-top: 20px;
+}
+
+.result-item {
+  background-color: #fff;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.result-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.result-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.result-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.result-date {
+  font-size: 14px;
+  color: #777;
+}
+
+.result-details {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.result-score {
+  display: flex;
+  align-items: center;
+}
+
+.score-circle.mini {
+  width: 60px;
+  height: 60px;
+  font-size: 16px;
+  margin-right: 10px;
+}
+
+.score-value.mini {
+  font-size: 18px;
+}
+
+.score-percentage.mini {
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.no-results-message {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: center;
+  margin: 20px 0;
+  font-size: 18px;
+  color: #666;
+}
+
+.loading-message, .error-message {
+  text-align: center;
+  margin: 30px 0;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  font-size: 18px;
+}
+
+.error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+}
+
+.success-message {
+  margin: 15px 0;
+  padding: 12px;
+  background-color: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 4px;
+  text-align: center;
+  font-weight: 500;
+}
+
+/* Стили для административной панели */
+.admin-controls {
+  background-color: #f8f9fa;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.user-filter label {
+  font-weight: 500;
+  color: #333;
+}
+
+.user-filter select {
+  padding: 8px 12px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  font-size: 14px;
+  min-width: 250px;
+}
+
+.result-user-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.user-name {
+  font-size: 14px;
+  color: #666;
+  margin-top: 4px;
 } 

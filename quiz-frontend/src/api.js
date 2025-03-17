@@ -105,8 +105,23 @@ export const fetchQuizzes = async () => {
 // Пример POST запроса
 export const createQuiz = async (quizData) => {
     try {
-        const response = await axiosInstance.post('quizzes/', quizData);
-        return response.data;
+        console.log('Создание нового квиза:', quizData);
+        const response = await fetch(`${API_URL}quizzes/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            credentials: 'include',
+            body: JSON.stringify(quizData)
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Ошибка: ${response.status}`);
+        }
+
+        return await response.json();
     } catch (error) {
         console.error('Ошибка при создании квиза:', error);
         throw error;
@@ -160,7 +175,7 @@ export const fetchQuizQuestion = async (quizId, questionIndex) => {
 };
 
 // Функция для сохранения результата теста
-export const saveQuizResult = async (quizId, score, maxScore) => {
+export const saveQuizResult = async (quizId, score, maxScore, userAnswers = null) => {
   try {
     const response = await fetch(`${API_URL}save-quiz-result/`, {
       method: 'POST',
@@ -172,7 +187,8 @@ export const saveQuizResult = async (quizId, score, maxScore) => {
       body: JSON.stringify({
         quiz_id: quizId,
         score: score,
-        max_score: maxScore
+        max_score: maxScore,
+        user_answers: userAnswers
       })
     });
 
@@ -313,5 +329,27 @@ export const getAdminQuizResultDetail = async (resultId) => {
   } catch (error) {
     console.error('Ошибка при получении детальной информации о результате:', error);
     throw error;
+  }
+};
+                                                                          
+// Функция для выхода из системы
+export const logout = async () => {
+  try {
+    // Вызываем API-эндпоинт для выхода из системы
+    const response = await fetch(`${API_URL}auth/logout/`, {
+      method: 'GET',
+      credentials: 'include'
+    });
+
+    // Удаляем cookie is_authenticated локально
+    document.cookie = "is_authenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+    
+    // Перенаправляем на страницу логина
+    window.location.href = '/login';
+    
+    return true;
+  } catch (error) {
+    console.error('Ошибка при выходе из системы:', error);
+    return false;
   }
 };

@@ -174,7 +174,7 @@ CORS_ALLOW_METHODS = [
 ]
 
 LOGIN_REDIRECT_URL = 'http://localhost:3000/quizzes'  # URL вашего фронтенда со страницей тестов
-ACCOUNT_SIGNUP_REDIRECT_URL = reverse_lazy('quiz-list-create')  # После успешной регистрации переходит на главную страницу
+ACCOUNT_SIGNUP_REDIRECT_URL = 'http://localhost:3000/quizzes'  # После регистрации тоже перенаправляем на фронтенд
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

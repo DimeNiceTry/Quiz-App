@@ -7,6 +7,7 @@ const UserResults = () => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedResult, setExpandedResult] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -52,6 +53,11 @@ const UserResults = () => {
     return '#F44336'; // Неудовлетворительно
   };
 
+  // Функция для переключения развернутого/свернутого состояния карточки результата
+  const toggleResultDetails = (resultId) => {
+    setExpandedResult(expandedResult === resultId ? null : resultId);
+  };
+
   if (loading) {
     return <div className="loading-message">Загрузка результатов...</div>;
   }
@@ -85,10 +91,11 @@ const UserResults = () => {
         {results.map((result) => {
           const percentage = calculatePercentage(result.score, result.max_score);
           const color = getColorForPercentage(percentage);
+          const isExpanded = expandedResult === result.id;
           
           return (
-            <div key={result.id} className="result-item">
-              <div className="result-header">
+            <div key={result.id} className={`result-item ${isExpanded ? 'expanded' : ''}`}>
+              <div className="result-header" onClick={() => toggleResultDetails(result.id)}>
                 <h3>{result.quiz_title}</h3>
                 <span className="result-date">{formatDate(result.completed_at)}</span>
               </div>
@@ -112,6 +119,35 @@ const UserResults = () => {
                   Пройти тест снова
                 </button>
               </div>
+              
+              {isExpanded && result.user_answers && (
+                <div className="user-answers-details">
+                  <h4>Ваши ответы:</h4>
+                  <div className="answers-list">
+                    {result.user_answers.map((answer, index) => (
+                      <div key={index} className={`answer-item ${answer.is_correct ? 'correct' : 'incorrect'}`}>
+                        <div className="question-text">
+                          <span className="question-number">Вопрос {index + 1}:</span> {answer.question_text}
+                        </div>
+                        <div className="answer-details">
+                          <div className="user-answer">
+                            <span className="answer-label">Ваш ответ:</span> 
+                            <span className={answer.is_correct ? 'correct-text' : 'incorrect-text'}>
+                              {answer.user_answer}
+                            </span>
+                          </div>
+                          {!answer.is_correct && (
+                            <div className="correct-answer">
+                              <span className="answer-label">Правильный ответ:</span> 
+                              <span className="correct-text">{answer.correct_answer}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           );
         })}

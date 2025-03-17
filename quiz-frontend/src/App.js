@@ -6,7 +6,8 @@ import QuizQuestion from './components/QuizQuestion';
 import QuizResults from './components/QuizResults';
 import UserResults from './components/UserResults';
 import AdminResults from './components/AdminResults';
-import { checkAuthStatus } from './api';
+import CreateQuiz from './components/CreateQuiz';
+import { checkAuthStatus, logout } from './api';
 import './App.css';
 
 function App() {
@@ -75,15 +76,21 @@ function App() {
                 {authenticated && (
                     <div className="nav-links">
                         <Link to="/" className="nav-link">Главная</Link>
+                        {/* Временно скрыто для обычных пользователей 
                         <Link to="/results-history" className="nav-link">История результатов</Link>
+                        */}
                         {isAdmin && (
-                            <Link to="/admin/results" className="nav-link admin-link">Результаты пользователей</Link>
+                            <>
+                                <Link to="/results-history" className="nav-link">История результатов</Link>
+                                <Link to="/admin/results" className="nav-link admin-link">Результаты пользователей</Link>
+                            </>
                         )}
+                        <Link to="/create-quiz" className="nav-link create-link">Создать тест</Link>
                     </div>
                 )}
                 <div className="auth-buttons">
                     {authenticated ? (
-                        <button className="logout-button" onClick={() => {}}>Выйти</button>
+                        <button className="logout-button" onClick={() => logout()}>Выйти</button>
                     ) : (
                         <button className="login-button" onClick={() => {}}>Войти</button>
                     )}
@@ -96,6 +103,7 @@ function App() {
                 <Route path="/quizzes/:quizId/questions/:questionIndex" element={authenticated ? <QuizQuestion /> : <Navigate to="/login" />} />
                 <Route path="/quizzes/:quizId/results" element={authenticated ? <QuizResults /> : <Navigate to="/login" />} />
                 <Route path="/results-history" element={authenticated ? <UserResults /> : <Navigate to="/login" />} />
+                <Route path="/create-quiz" element={authenticated ? <CreateQuiz /> : <Navigate to="/login" />} />
                 <Route path="/admin/results" element={
                     authenticated ? (
                         isAdmin ? <AdminResults /> : <Navigate to="/" />

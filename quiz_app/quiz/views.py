@@ -1,6 +1,6 @@
 from rest_framework import generics, permissions, status
 from .models import Quiz, Question, Answer, QuizResult
-from .serializers import QuizSerializer, QuizDetailSerializer, QuestionSerializer, AnswerSerializer, QuizResultSerializer
+from .serializers import QuizSerializer, QuizDetailSerializer, QuestionSerializer, AnswerSerializer, QuizResultSerializer, QuizCreateSerializer
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated, IsAdminUser
 from django.shortcuts import redirect, get_object_or_404
@@ -10,8 +10,13 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from django.db.models import Q
+from django.contrib.auth import logout
+import copy
 
 def home(request):
+    # Если пользователь уже вошел в систему, перенаправляем на фронтенд
+    if request.user.is_authenticated:
+        return redirect('http://localhost:3000/quizzes?auth=success')
     return render(request, 'home.html')  # 'home.html' - путь к вашему шаблону
 
 
@@ -66,14 +71,21 @@ class QuizListCreate(generics.ListCreateAPIView):
     Доступно только авторизованным пользователям.
     Автор квиза устанавливается автоматически как текущий пользователь.
     """
-    serializer_class = QuizSerializer
-    permission_classes = [permissions.IsAuthenticated] # Требуется аутентификация
+    permission_classes = [permissions.IsAuthenticated]  # Требуется аутентификация
 
     def get_queryset(self):
         """
         Возвращает все доступные тесты для пользователя.
         """
         return Quiz.objects.all()
+        
+    def get_serializer_class(self):
+        """
+        Возвращает разные сериализаторы для чтения и создания
+        """
+        if self.request.method == 'POST':
+            return QuizCreateSerializer
+        return QuizSerializer
 
     def perform_create(self, serializer):
         """
@@ -123,16 +135,29 @@ def get_question(request, quiz_id, question_index):
     question = questions[question_index]
     serializer = QuestionSerializer(question)
     
+    # Создаем копию данных, чтобы не модифицировать оригинальный сериализатор
+    data = copy.deepcopy(serializer.data)
+
+    # Отладочный вывод
+    print("Оригинальные данные вопроса с ответами:")
+    for i, answer in enumerate(data['answers']):
+        print(f"Ответ {i+1}: {answer['text']} (is_correct: {answer.get('is_correct', 'отсутствует')})")
+    
+    # Больше не удаляем информацию о правильности, просто отмечаем, что ответы нужно скрыть
+    # Фронтенд сам определит, показывать ли правильность ответа пользователю
+    
     # Добавляем информацию о текущем индексе и общем количестве вопросов
-    data = {
+    result_data = {
         "quiz_id": quiz_id,
         "quiz_title": quiz.title,
         "current_index": question_index,
         "total_questions": questions.count(),
-        "question": serializer.data
+        "question": data,
+        "hide_answers": quiz.hide_answers,
+        "time_limit": quiz.time_limit
     }
     
-    return Response(data)
+    return Response(result_data)
 
 class SaveQuizResult(APIView):
     permission_classes = [permissions.IsAuthenticated]
@@ -141,6 +166,10 @@ class SaveQuizResult(APIView):
         quiz_id = request.data.get('quiz_id')
         score = request.data.get('score')
         max_score = request.data.get('max_score')
+        user_answers = request.data.get('user_answers')
+        
+        print(f"Сохранение результата: quiz_id={quiz_id}, score={score}, max_score={max_score}")
+        print(f"Пользователь: {request.user.username}, user_answers: {user_answers}")
         
         if not all([quiz_id, score is not None, max_score is not None]):
             return Response(
@@ -156,12 +185,27 @@ class SaveQuizResult(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        quiz_result = QuizResult.objects.create(
+        # Если есть предыдущие результаты с тем же набором полей, удаляем их
+        # чтобы избежать дублирования
+        existing_results = QuizResult.objects.filter(
             quiz=quiz,
             user=request.user,
             score=score,
             max_score=max_score
         )
+        if existing_results.exists():
+            print(f"Удаление существующих результатов: {len(existing_results)}")
+            existing_results.delete()
+        
+        quiz_result = QuizResult.objects.create(
+            quiz=quiz,
+            user=request.user,
+            score=score,
+            max_score=max_score,
+            user_answers=user_answers
+        )
+        
+        print(f"Создан результат: id={quiz_result.id}, score={quiz_result.score}/{quiz_result.max_score}")
         
         serializer = QuizResultSerializer(quiz_result)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -225,3 +269,17 @@ class UsersList(generics.ListAPIView):
         users = [{'id': user.id, 'username': user.username, 'email': user.email} 
                  for user in queryset]
         return Response(users)
+
+# Обработчик выхода из системы
+@api_view(['GET'])
+def logout_view(request):
+    # Выход пользователя
+    logout(request)
+    
+    # Создаем ответ для перенаправления
+    response = JsonResponse({'success': True, 'message': 'Успешный выход из системы'})
+    
+    # Удаляем cookie is_authenticated
+    response.delete_cookie('is_authenticated')
+    
+    return response

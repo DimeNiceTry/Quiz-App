@@ -5,6 +5,8 @@ class Quiz(models.Model):
     title = models.CharField(max_length=200)
     author = models.ForeignKey(User, on_delete=models.CASCADE)  # Связь с автором
     created_at = models.DateTimeField(auto_now_add=True)
+    hide_answers = models.BooleanField(default=True, help_text="Скрывать правильные ответы до завершения теста")
+    time_limit = models.IntegerField(default=0, help_text="Ограничение времени в минутах (0 - без ограничения)")
 
     def __str__(self):
         return self.title
@@ -30,6 +32,7 @@ class QuizResult(models.Model):
     score = models.IntegerField()
     max_score = models.IntegerField()
     completed_at = models.DateTimeField(auto_now_add=True)
+    user_answers = models.JSONField(null=True, blank=True, help_text="Ответы пользователя в формате JSON")
     
     class Meta:
         unique_together = ['quiz', 'user', 'completed_at']

@@ -9,6 +9,7 @@ const AdminResults = () => {
   const [selectedUserId, setSelectedUserId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedResult, setExpandedResult] = useState(null);
   const navigate = useNavigate();
 
   // Загружаем список пользователей
@@ -50,6 +51,11 @@ const AdminResults = () => {
   const handleUserFilter = (e) => {
     const userId = e.target.value === 'all' ? null : parseInt(e.target.value);
     setSelectedUserId(userId);
+  };
+
+  // Функция для переключения развернутого/свернутого состояния карточки результата
+  const toggleResultDetails = (resultId) => {
+    setExpandedResult(expandedResult === resultId ? null : resultId);
   };
 
   // Форматирование даты
@@ -133,10 +139,11 @@ const AdminResults = () => {
           {results.map((result) => {
             const percentage = calculatePercentage(result.score, result.max_score);
             const color = getColorForPercentage(percentage);
+            const isExpanded = expandedResult === result.id;
             
             return (
-              <div key={result.id} className="result-item">
-                <div className="result-header">
+              <div key={result.id} className={`result-item ${isExpanded ? 'expanded' : ''}`}>
+                <div className="result-header" onClick={() => toggleResultDetails(result.id)}>
                   <div className="result-user-info">
                     <h3>{result.quiz_title}</h3>
                     <span className="user-name">Пользователь: {result.username}</span>
@@ -156,6 +163,35 @@ const AdminResults = () => {
                     </div>
                   </div>
                 </div>
+                
+                {isExpanded && result.user_answers && (
+                  <div className="user-answers-details">
+                    <h4>Ответы пользователя:</h4>
+                    <div className="answers-list">
+                      {result.user_answers.map((answer, index) => (
+                        <div key={index} className={`answer-item ${answer.is_correct ? 'correct' : 'incorrect'}`}>
+                          <div className="question-text">
+                            <span className="question-number">Вопрос {index + 1}:</span> {answer.question_text}
+                          </div>
+                          <div className="answer-details">
+                            <div className="user-answer">
+                              <span className="answer-label">Ответ пользователя:</span> 
+                              <span className={answer.is_correct ? 'correct-text' : 'incorrect-text'}>
+                                {answer.user_answer}
+                              </span>
+                            </div>
+                            {!answer.is_correct && (
+                              <div className="correct-answer">
+                                <span className="answer-label">Правильный ответ:</span> 
+                                <span className="correct-text">{answer.correct_answer}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}

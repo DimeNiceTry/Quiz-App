@@ -14,10 +14,8 @@ from django.contrib.auth import logout
 import copy
 
 def home(request):
-    # Если пользователь уже вошел в систему, перенаправляем на фронтенд
-    if request.user.is_authenticated:
-        return redirect('http://localhost:3000/quizzes?auth=success')
-    return render(request, 'home.html')  # 'home.html' - путь к вашему шаблону
+    # Редирект на фронтенд на GitHub Pages
+    return redirect('https://dimenicetry.github.io/Quiz-App/')
 
 
 def google_login_callback(request):
@@ -33,7 +31,7 @@ def google_login_callback(request):
         print(f"Existing session: {request.session.session_key}")
 
     # Перенаправление на URL React-приложения с параметром для указания успешной авторизации
-    response = redirect('http://localhost:3000/quizzes?auth=success')
+    response = redirect('https://dimenicetry.github.io/Quiz-App/#/quizzes?auth=success')
 
     # Установите cookie без флага httponly, чтобы она была доступна в JavaScript
     response.set_cookie('is_authenticated', 'true', httponly=False, secure=True if request.is_secure() else False, samesite='Lax')

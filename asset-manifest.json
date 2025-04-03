@@ -1,13 +1,11 @@
 {
   "files": {
-    "main.css": "/Quiz-App/static/css/main.1a5cc4ab.css",
-    "main.js": "/Quiz-App/static/js/main.7dad1433.js",
-    "index.html": "/Quiz-App/index.html",
-    "main.1a5cc4ab.css.map": "/Quiz-App/static/css/main.1a5cc4ab.css.map",
-    "main.7dad1433.js.map": "/Quiz-App/static/js/main.7dad1433.js.map"
+    "main.css": "https://dimenicetry.github.io/Quiz-App/static/css/main.ec0a9700.css",
+    "main.js": "https://dimenicetry.github.io/Quiz-App/static/js/main.8d2e5a34.js",
+    "index.html": "https://dimenicetry.github.io/Quiz-App/index.html"
   },
   "entrypoints": [
-    "static/css/main.1a5cc4ab.css",
-    "static/js/main.7dad1433.js"
+    "static/css/main.ec0a9700.css",
+    "static/js/main.8d2e5a34.js"
   ]
 }

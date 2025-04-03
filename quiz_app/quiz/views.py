@@ -14,7 +14,11 @@ from django.contrib.auth import logout
 import copy
 
 def home(request):
-    # Редирект на фронтенд на GitHub Pages
+    # Если пользователь просит HTML-версию, отображаем шаблон
+    # Это будет актуально для браузера
+    if request.META.get('HTTP_ACCEPT', '').find('text/html') != -1:
+        return render(request, 'home.html')
+    # В остальных случаях - редирект на фронтенд
     return redirect('https://dimenicetry.github.io/Quiz-App/')
 
 

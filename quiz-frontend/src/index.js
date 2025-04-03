@@ -4,10 +4,14 @@ import App from './App';
 import { HashRouter } from "react-router-dom";
 import './index.css';
 
+// Получаем базовый путь из URL проекта
+const baseUrl = document.getElementsByTagName('base')[0]?.getAttribute('href') || '/';
+console.log('Base URL:', baseUrl);
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <HashRouter basename="/">
+    <HashRouter basename="">
       <App />
     </HashRouter>
   </React.StrictMode>

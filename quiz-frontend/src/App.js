@@ -10,6 +10,11 @@ import CreateQuiz from './components/CreateQuiz';
 import { checkAuthStatus, logout } from './api';
 import './App.css';
 
+// Определяем базовый URL для API в зависимости от окружения
+const API_BASE_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://quiz-app-backend.onrender.com' 
+    : 'http://localhost:8000';
+
 function App() {
     const [authenticated, setAuthenticated] = useState(false);
     const [loading, setLoading] = useState(true);
@@ -114,7 +119,7 @@ function App() {
                     <Navigate to="/quizzes" /> : 
                     <div className="login-container">
                         <h1>Вход в систему</h1>
-                        <a href="http://localhost:8000/accounts/google/login/" className="google-login-button">
+                        <a href={`${API_BASE_URL}/accounts/google/login/`} className="google-login-button">
                             Войти через Google
                         </a>
                     </div>

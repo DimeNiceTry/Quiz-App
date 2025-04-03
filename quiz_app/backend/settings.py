@@ -161,12 +161,15 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # URL вашего фронтенда
+    "http://localhost:3000",  # Локальный URL фронтенда
+    "https://yourusername.github.io",  # Ваш GitHub Pages URL - замените на свой
 ]
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:3000",  # URL вашего фронтенда
+    "http://localhost:3000",  # Локальный URL фронтенда
+    "https://yourusername.github.io",  # Ваш GitHub Pages URL - замените на свой
+    "https://quiz-app-backend.onrender.com",  # URL вашего бэкенда на Render - замените на свой
 ]
 
 # Разрешить все заголовки в CORS запросах
@@ -192,8 +195,8 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 
-LOGIN_REDIRECT_URL = 'http://localhost:3000/quizzes'  # URL вашего фронтенда со страницей тестов
-ACCOUNT_SIGNUP_REDIRECT_URL = 'http://localhost:3000/quizzes'  # После регистрации тоже перенаправляем на фронтенд
+LOGIN_REDIRECT_URL = 'https://yourusername.github.io/quizzes'  # URL вашего фронтенда - замените на свой
+ACCOUNT_SIGNUP_REDIRECT_URL = 'https://yourusername.github.io/quizzes'  # URL вашего фронтенда - замените на свой
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

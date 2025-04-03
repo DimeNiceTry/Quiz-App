@@ -12,7 +12,7 @@ import './App.css';
 
 // Определяем базовый URL для API в зависимости от окружения
 const API_BASE_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://quiz-app-backend.onrender.com' 
+    ? 'https://quiz-app-w21h.onrender.com' 
     : 'http://localhost:8000';
 
 function App() {

@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Определяем API URL в зависимости от окружения
 const API_URL = process.env.NODE_ENV === 'production' 
-  ? 'https://quiz-app-backend.onrender.com/api/' // URL бэкенда на Render - замените на URL вашего будущего бэкенда на Render
+  ? 'https://quiz-app-w21h.onrender.com/api/' // URL бэкенда на Render
   : 'http://localhost:8000/api/';  // URL для локальной разработки
 
 console.log('Текущий API URL:', API_URL); // Для отладки

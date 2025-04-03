@@ -16,7 +16,15 @@ SECRET_KEY = os.environ.get('SECRET_KEY', 'your_default_secret_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', 'localhost:3000']
+# Получаем ALLOWED_HOSTS из переменной окружения или используем значения по умолчанию
+ALLOWED_HOSTS_ENV = os.environ.get('ALLOWED_HOSTS', '')
+if ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = ALLOWED_HOSTS_ENV.split(',')
+else:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'localhost:8000', 'localhost:3000', 'quiz-app-w21h.onrender.com', '.onrender.com']
+
+# Явно добавляем домен, чтобы гарантировать его присутствие
+ALLOWED_HOSTS.append('quiz-app-w21h.onrender.com')
 
 # Application definition
 
@@ -49,6 +57,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'allauth.account.middleware.AccountMiddleware',
+    'quiz.middleware.AllowedHostsOverrideMiddleware',
 ]
 
 ROOT_URLCONF = 'backend.urls'
@@ -160,16 +169,23 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS settings
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Локальный URL фронтенда
-    "https://yourusername.github.io",  # Ваш GitHub Pages URL - замените на свой
-]
+
+# Получаем CORS_ALLOWED_ORIGINS из переменной окружения или используем значения по умолчанию
+CORS_ORIGINS_ENV = os.environ.get('CORS_ALLOWED_ORIGINS', '')
+if CORS_ORIGINS_ENV:
+    CORS_ALLOWED_ORIGINS = CORS_ORIGINS_ENV.split(',')
+else:
+    CORS_ALLOWED_ORIGINS = [
+        "http://localhost:3000",  # Локальный URL фронтенда
+        "https://dimenicetry.github.io",  # GitHub Pages URL
+        "https://quiz-app-w21h.onrender.com",  # URL бэкенда на Render
+    ]
 
 # CSRF settings
 CSRF_TRUSTED_ORIGINS = [
     "http://localhost:3000",  # Локальный URL фронтенда
-    "https://yourusername.github.io",  # Ваш GitHub Pages URL - замените на свой
-    "https://quiz-app-backend.onrender.com",  # URL вашего бэкенда на Render - замените на свой
+    "https://dimenicetry.github.io",  # GitHub Pages URL
+    "https://quiz-app-w21h.onrender.com",  # URL бэкенда на Render
 ]
 
 # Разрешить все заголовки в CORS запросах
@@ -195,8 +211,8 @@ CORS_ALLOW_METHODS = [
     "PUT",
 ]
 
-LOGIN_REDIRECT_URL = 'https://yourusername.github.io/quizzes'  # URL вашего фронтенда - замените на свой
-ACCOUNT_SIGNUP_REDIRECT_URL = 'https://yourusername.github.io/quizzes'  # URL вашего фронтенда - замените на свой
+LOGIN_REDIRECT_URL = 'https://dimenicetry.github.io/Quiz-App/#/quizzes'  # URL фронтенда со страницей тестов
+ACCOUNT_SIGNUP_REDIRECT_URL = 'https://dimenicetry.github.io/Quiz-App/#/quizzes'  # После регистрации тоже перенаправляем на фронтенд
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [

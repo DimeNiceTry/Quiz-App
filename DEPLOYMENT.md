@@ -38,8 +38,9 @@
    - `SECRET_KEY` - уникальный ключ шифрования
    - `DEBUG` - `False`
    - `SQLITE_MODE` - `False`
-   - `ALLOWED_HOSTS` - `.onrender.com`
-   - `CSRF_TRUSTED_ORIGINS` - `https://вашдомен.onrender.com,https://yourusername.github.io`
+   - `ALLOWED_HOSTS` - `quiz-app-w21h.onrender.com,.onrender.com,localhost,127.0.0.1` (замените на ваш домен)
+   - `CSRF_TRUSTED_ORIGINS` - `https://quiz-app-w21h.onrender.com,https://dimenicetry.github.io` (замените на ваши домены)
+   - `CORS_ALLOWED_ORIGINS` - `https://dimenicetry.github.io,http://localhost:3000` (замените на ваши домены)
    - `GOOGLE_OAUTH2_CLIENT_ID` - ID вашего Google OAuth клиента
    - `GOOGLE_OAUTH2_CLIENT_SECRET` - секрет Google OAuth
 
@@ -96,4 +97,9 @@
 1. Проверьте логи на Render.com в разделе сервиса
 2. Проверьте настройки CORS в файле settings.py - домены должны соответствовать вашему GitHub Pages URL
 3. Проверьте, что все переменные окружения на Render настроены правильно
-4. Убедитесь, что ваша база данных на Aiven активна и доступна 
+4. Убедитесь, что ваша база данных на Aiven активна и доступна
+5. При ошибке "Invalid HTTP_HOST header" убедитесь, что ваш домен (например, quiz-app-w21h.onrender.com) добавлен в ALLOWED_HOSTS
+6. Для принудительного перезапуска приложения на Render можно использовать скрипт render-restart.sh:
+   ```
+   bash render-restart.sh
+   ``` 

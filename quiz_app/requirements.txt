@@ -1,0 +1,23 @@
+# Основные пакеты
+Django==5.2
+djangorestframework==3.16.0
+django-cors-headers==4.7.0
+python-dotenv==1.1.0
+
+# База данных
+psycopg2==2.9.10
+
+# Аутентификация
+django-allauth==65.7.0
+pyjwt==2.10.1
+cryptography==44.0.2
+requests==2.32.3
+
+# WSGI-сервер для продакшена
+gunicorn==21.2.0
+
+# Статические файлы (для деплоя)
+whitenoise==6.7.0
+
+# Для безопасности
+dj-database-url==2.2.0 

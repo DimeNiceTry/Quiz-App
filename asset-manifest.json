@@ -1,11 +1,11 @@
 {
   "files": {
     "main.css": "https://dimenicetry.github.io/Quiz-App/static/css/main.ec0a9700.css",
-    "main.js": "https://dimenicetry.github.io/Quiz-App/static/js/main.8d2e5a34.js",
+    "main.js": "https://dimenicetry.github.io/Quiz-App/static/js/main.9aed811a.js",
     "index.html": "https://dimenicetry.github.io/Quiz-App/index.html"
   },
   "entrypoints": [
     "static/css/main.ec0a9700.css",
-    "static/js/main.8d2e5a34.js"
+    "static/js/main.9aed811a.js"
   ]
 }

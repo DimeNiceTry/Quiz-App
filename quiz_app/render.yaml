@@ -1,0 +1,41 @@
+services:
+  - type: web
+    name: quiz-app-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn backend.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: DEBUG
+        value: 'False'
+      - key: SECRET_KEY
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com,localhost,127.0.0.1"
+      - key: DB_ENGINE
+        value: django.db.backends.postgresql
+      - key: DB_NAME
+        value: defaultdb
+      - key: DB_USER
+        fromDatabase:
+          name: aiven-postgres
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: aiven-postgres
+          property: password
+      - key: DB_HOST
+        fromDatabase:
+          name: aiven-postgres
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: aiven-postgres
+          property: port
+      - key: DB_SSL_MODE
+        value: require
+      - key: DB_CONN_MAX_AGE
+        value: '60'
+      - key: GOOGLE_OAUTH2_CLIENT_ID
+        sync: false
+      - key: GOOGLE_OAUTH2_CLIENT_SECRET
+        sync: false 

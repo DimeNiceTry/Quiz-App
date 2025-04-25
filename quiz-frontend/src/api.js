@@ -1,6 +1,13 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api/';
+// Определяем базовый URL API в зависимости от окружения
+const isProduction = process.env.NODE_ENV === 'production';
+const API_URL = isProduction 
+  ? 'https://quiz-app-w21h.onrender.com/api/'
+  : 'http://localhost:8000/api/';
+
+console.log('Окружение:', process.env.NODE_ENV);
+console.log('Используется API URL:', API_URL);
 
 // Функция для получения CSRF-токена из cookies
 function getCookie(name) {
@@ -32,6 +39,25 @@ const axiosInstance = axios.create({
     withCredentials: true  // Включаем отправку cookies с запросами
 });
 
+// В продакшне добавляем обработку ошибок, связанных с CORS
+if (isProduction) {
+    axiosInstance.interceptors.response.use(
+        (response) => response,
+        (error) => {
+            console.error('API Error:', error.message);
+            // Обработка CORS ошибок
+            if (error.message.includes('Network Error') || error.message.includes('CORS')) {
+                console.log('Обнаружена CORS ошибка, используем резервный подход...');
+                // Возвращаем базовый ответ для продолжения работы приложения
+                return Promise.resolve({
+                    data: { authenticated: false }
+                });
+            }
+            return Promise.reject(error);
+        }
+    );
+}
+
 // Функция для получения заголовка авторизации
 export const getAuthHeader = () => {
     // Для SessionAuthentication не нужно явно передавать токен
@@ -43,6 +69,7 @@ export const getAuthHeader = () => {
 export const checkAuthStatus = async () => {
     try {
         console.log('Проверка авторизации...');
+        // Сначала проверяем cookie
         const cookieValue = getCookie('is_authenticated');
         console.log('Cookie is_authenticated:', cookieValue);
         
@@ -51,27 +78,56 @@ export const checkAuthStatus = async () => {
             return { authenticated: true };
         }
         
-        console.log('Запрос на сервер для проверки авторизации...');
-        const response = await axiosInstance.get('auth/check/', { withCredentials: true });
-        console.log('Ответ сервера:', response.data);
+        // Затем проверяем URL-параметры
+        const urlParams = new URLSearchParams(window.location.search);
+        const hashParams = new URLSearchParams(window.location.hash.split('?')[1] || '');
+        const authParam = urlParams.get('auth') || hashParams.get('auth');
         
-        if (response.data.authenticated) {
-            console.log('Пользователь авторизован через API');
-        } else {
-            console.log('Пользователь НЕ авторизован через API');
-        }
-        
-        return response.data;
-    } catch (error) {
-        console.error('Ошибка при проверке авторизации:', error);
-        
-        // Проверим cookie даже если запрос к API не удался
-        const cookieValue = getCookie('is_authenticated');
-        if (cookieValue === 'true') {
-            console.log('Пользователь авторизован через cookie (после ошибки API)');
+        if (authParam === 'success' || window.location.hash.includes('auth=success')) {
+            console.log('Параметр auth=success найден в URL/hash, автоматически авторизуем');
+            // Устанавливаем cookie для дальнейшего использования
+            document.cookie = 'is_authenticated=true; path=/; secure; samesite=none; max-age=2592000'; // 30 дней
             return { authenticated: true };
         }
         
+        // В production не делаем запрос к API для проверки авторизации
+        if (isProduction) {
+            console.log('В production не делаем запрос к API для проверки авторизации');
+            return { authenticated: false };
+        }
+        
+        // В development используем стандартную проверку
+        console.log('Запрос на сервер для проверки авторизации...');
+        try {
+            const response = await axios.get(`${API_URL}auth/check/`, {
+                withCredentials: true  // Важно для передачи cookie
+            });
+            
+            console.log('Ответ сервера:', response.data);
+            
+            if (response.data.authenticated) {
+                console.log('Пользователь авторизован через API');
+                // Устанавливаем cookie для будущих проверок
+                document.cookie = 'is_authenticated=true; path=/; secure; samesite=none; max-age=2592000'; // 30 дней
+            } else {
+                console.log('Пользователь НЕ авторизован через API');
+            }
+            
+            return response.data;
+        } catch (apiError) {
+            console.error('Ошибка при запросе к API:', apiError);
+            
+            // Повторная проверка URL параметров на случай, если первая проверка пропустила
+            if (authParam === 'success' || window.location.hash.includes('auth=success')) {
+                console.log('Параметр auth=success найден после ошибки API');
+                document.cookie = 'is_authenticated=true; path=/; secure; samesite=none; max-age=2592000';
+                return { authenticated: true };
+            }
+            
+            return { authenticated: false };
+        }
+    } catch (error) {
+        console.error('Ошибка при проверке авторизации:', error);
         return { authenticated: false };
     }
 };

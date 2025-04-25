@@ -20,11 +20,23 @@ function App() {
         // Получаем параметры URL
         const searchParams = new URLSearchParams(location.search);
         const authParam = searchParams.get('auth');
+        
+        // Получаем параметры из фрагмента URL (после #)
+        const hashSearch = location.hash.split('?')[1] || '';
+        const hashParams = new URLSearchParams(hashSearch);
+        const hashAuthParam = hashParams.get('auth');
+        
+        // Объединяем проверки для лучшей совместимости
+        const isAuthSuccess = authParam === 'success' || 
+                            hashAuthParam === 'success' || 
+                            location.hash.includes('auth=success');
 
-        // Проверяем, есть ли параметр auth=success
-        if (authParam === 'success') {
+        // Проверяем, есть ли параметр auth=success в URL или hash
+        if (isAuthSuccess) {
             console.log('Обнаружен параметр auth=success в URL');
             setAuthenticated(true);
+            // Устанавливаем cookie для будущих сессий
+            document.cookie = 'is_authenticated=true; path=/; secure; samesite=none; max-age=2592000'; // 30 дней
             setLoading(false);
             return;
         }
@@ -59,7 +71,7 @@ function App() {
         };
 
         checkAuth();
-    }, [location.search]);
+    }, [location.search, location.hash]);
 
     if (loading) {
         return <div className="loading">Загрузка...</div>;
@@ -114,9 +126,36 @@ function App() {
                     <Navigate to="/quizzes" /> : 
                     <div className="login-container">
                         <h1>Вход в систему</h1>
-                        <a href="http://localhost:8000/accounts/google/login/" className="google-login-button">
+                        <a href="#" className="google-login-button" onClick={(e) => {
+                            e.preventDefault();
+                            
+                            // Простое перенаправление на URL авторизации
+                            const loginUrl = process.env.NODE_ENV === 'production'
+                                ? "https://quiz-app-w21h.onrender.com/accounts/google/login/"
+                                : "http://localhost:8000/accounts/google/login/";
+                            
+                            console.log('Перенаправление на авторизацию Google:', loginUrl);
+                            
+                            // Создаем куку для обнаружения успешного возврата
+                            document.cookie = 'login_pending=true; path=/; secure; samesite=none; max-age=600'; // 10 минут
+                            
+                            // Прямой переход на страницу авторизации
+                            window.location.href = loginUrl;
+                        }}>
                             Войти через Google
                         </a>
+                        <p className="login-info">
+                            Этот сервис использует аутентификацию через Google для обеспечения безопасного входа
+                        </p>
+                        {process.env.NODE_ENV === 'development' && (
+                            <div className="debug-info">
+                                <h3>Отладочная информация:</h3>
+                                <p>Окружение: {process.env.NODE_ENV}</p>
+                                <p>URL: {window.location.href}</p>
+                                <p>Hash: {window.location.hash}</p>
+                                <p>API URL: {process.env.REACT_APP_API_URL || "не установлено"}</p>
+                            </div>
+                        )}
                     </div>
                 } />
             </Routes>

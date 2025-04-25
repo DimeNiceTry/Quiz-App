@@ -12,6 +12,7 @@ from rest_framework.views import APIView
 from django.db.models import Q
 from django.contrib.auth import logout
 import copy
+import os
 
 def home(request):
     # Если пользователь уже вошел в систему, перенаправляем на фронтенд
@@ -21,6 +22,12 @@ def home(request):
 
 
 def google_login_callback(request):
+    # Теперь этот обработчик используется как дополнительный 
+    # после стандартного обработчика callback django-allauth
+    
+    # Определяем, находимся ли мы в продакшн-окружении
+    is_production = 'RENDER' in os.environ
+    
     # Проверяем, что пользователь получен и авторизован
     print(f"User authenticated: {request.user.is_authenticated}")
     print(f"User: {request.user.username} / {request.user.email}")
@@ -32,11 +39,30 @@ def google_login_callback(request):
     else:
         print(f"Existing session: {request.session.session_key}")
 
-    # Перенаправление на URL React-приложения с параметром для указания успешной авторизации
-    response = redirect('http://localhost:3000/quizzes?auth=success')
+    # Выбираем URL в зависимости от окружения
+    if is_production:
+        # Используем hash роутер в production
+        redirect_url = 'https://dimenicetry.github.io/Quiz-App/#/quizzes?auth=success'
+    else:
+        redirect_url = 'http://localhost:3000/quizzes?auth=success'
+    
+    # Перенаправление на URL React-приложения
+    response = redirect(redirect_url)
 
     # Установите cookie без флага httponly, чтобы она была доступна в JavaScript
-    response.set_cookie('is_authenticated', 'true', httponly=False, secure=True if request.is_secure() else False, samesite='Lax')
+    response.set_cookie(
+        'is_authenticated', 'true', 
+        httponly=False, 
+        secure=True, 
+        samesite='None',
+        max_age=2592000  # 30 дней
+    )
+    
+    # Добавляем CORS заголовки
+    response["Access-Control-Allow-Origin"] = "https://dimenicetry.github.io"
+    response["Access-Control-Allow-Credentials"] = "true"
+    response["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-CSRFToken"
     
     # Вывод cookies, которые будут установлены
     print(f"Response cookies: {response.cookies}")

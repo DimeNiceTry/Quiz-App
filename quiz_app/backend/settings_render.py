@@ -6,6 +6,10 @@ DEBUG = False
 # Настройки безопасности для продакшн
 ALLOWED_HOSTS = ['*', 'quiz-app-km8k.onrender.com']  
 
+# Добавляем whitenoise для статических файлов
+MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
 # Настройки CORS для продакшн
 CORS_ALLOWED_ORIGINS = [
     "https://dimenicetry.github.io",  # URL вашего GitHub Pages
@@ -79,6 +83,7 @@ SOCIALACCOUNT_PROVIDERS = {
 }
 
 # Настройки статических файлов
+STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 # Настройки сессий и cookies для разрешения передачи между доменами

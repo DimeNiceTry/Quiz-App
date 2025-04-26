@@ -17,8 +17,24 @@ import os
 def home(request):
     # Если пользователь уже вошел в систему, перенаправляем на фронтенд
     if request.user.is_authenticated:
-        return redirect('http://localhost:3000/quizzes?auth=success')
-    return render(request, 'home.html')  # 'home.html' - путь к вашему шаблону
+        # Определяем, находимся ли мы в продакшн-окружении
+        is_production = 'RENDER' in os.environ
+        
+        # Выбираем URL в зависимости от окружения
+        if is_production:
+            redirect_url = 'https://dimenicetry.github.io/Quiz-App/#/quizzes?auth=success'
+        else:
+            redirect_url = 'http://localhost:3000/quizzes?auth=success'
+        
+        return redirect(redirect_url)
+    else:
+        # Вместо рендеринга шаблона, перенаправляем на страницу входа
+        is_production = 'RENDER' in os.environ
+        
+        if is_production:
+            return redirect('https://dimenicetry.github.io/Quiz-App/#/login')
+        else:
+            return redirect('http://localhost:3000/login')
 
 
 def google_login_callback(request):

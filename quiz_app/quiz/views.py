@@ -14,6 +14,8 @@ from django.contrib.auth import logout
 import copy
 import os
 from django.middleware.csrf import get_token
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 def home(request):
     # Если пользователь уже вошел в систему, перенаправляем на фронтенд
@@ -108,6 +110,7 @@ def check_auth(request):
             'session_exists': bool(request.session.session_key)
         })
 
+@method_decorator(csrf_exempt, name='dispatch')
 class QuizListCreate(generics.ListCreateAPIView):
     """
     API endpoint для просмотра списка квизов и создания нового квиза.

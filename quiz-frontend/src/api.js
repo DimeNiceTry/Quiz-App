@@ -163,7 +163,11 @@ export const fetchQuizzes = async () => {
 export const createQuiz = async (quizData) => {
     try {
         // Получаем CSRF-токен перед отправкой запроса
-        const csrftoken = getCookie('csrftoken') || await fetchCSRFToken();
+        // Принудительно запрашиваем токен с сервера
+        await fetchCSRFToken();
+        // Затем получаем сохраненный токен
+        const csrftoken = globalCSRFToken || '';
+        
         console.log('Создание нового квиза:', quizData);
         console.log('CSRF-токен:', csrftoken);
 
@@ -425,13 +429,34 @@ export const logout = async () => {
   }
 };
 
+// Храним CSRF-токен в глобальной переменной для многократного использования
+let globalCSRFToken = null;
+
 // Функция для получения CSRF-токена с сервера
 export const fetchCSRFToken = async () => {
+    // Если у нас уже есть токен, используем его
+    if (globalCSRFToken) {
+        console.log('Используем кэшированный CSRF-токен:', globalCSRFToken);
+        return globalCSRFToken;
+    }
+
+    // Пытаемся получить токен из cookie
+    const cookieToken = getCookie('csrftoken');
+    if (cookieToken) {
+        console.log('Используем CSRF-токен из cookie:', cookieToken);
+        globalCSRFToken = cookieToken;
+        return cookieToken;
+    }
+
     try {
+        console.log('Запрашиваем CSRF-токен с сервера...');
         const response = await fetch(`${API_URL}get-csrf-token/`, {
             method: 'GET',
             credentials: 'include',
         });
+
+        console.log('Статус ответа на запрос CSRF:', response.status);
+        console.log('Заголовки ответа:', [...response.headers.entries()]);
 
         if (!response.ok) {
             throw new Error(`Failed to fetch CSRF token: ${response.status}`);
@@ -439,6 +464,10 @@ export const fetchCSRFToken = async () => {
 
         const data = await response.json();
         console.log('Получен CSRF-токен с сервера:', data.csrfToken);
+        
+        // Сохраняем токен для последующего использования
+        globalCSRFToken = data.csrfToken;
+        
         return data.csrfToken;
     } catch (error) {
         console.error('Ошибка при получении CSRF-токена:', error);

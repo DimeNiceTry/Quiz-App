@@ -3,7 +3,7 @@ import axios from 'axios';
 // Определяем базовый URL API в зависимости от окружения
 const isProduction = process.env.NODE_ENV === 'production';
 const API_URL = isProduction 
-  ? 'https://quiz-app-w21h.onrender.com/api/'
+  ? 'https://quiz-app-km8k.onrender.com/api/'
   : 'http://localhost:8000/api/';
 
 console.log('Окружение:', process.env.NODE_ENV);

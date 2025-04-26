@@ -4,7 +4,7 @@ from .settings import *
 DEBUG = False
 
 # Настройки безопасности для продакшн
-ALLOWED_HOSTS = ['*', 'quiz-app-w21h.onrender.com']  
+ALLOWED_HOSTS = ['*', 'quiz-app-km8k.onrender.com']  
 
 # Настройки CORS для продакшн
 CORS_ALLOWED_ORIGINS = [
@@ -51,7 +51,7 @@ CORS_PREFLIGHT_MAX_AGE = 86400  # 24 часа
 CORS_URLS_REGEX = r'^.*$'  # Все URLs поддерживают CORS
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://quiz-app-w21h.onrender.com",  # URL вашего бэкенда на Render
+    "https://quiz-app-km8k.onrender.com",  # URL вашего бэкенда на Render
     "https://dimenicetry.github.io",  # URL вашего GitHub Pages
 ]
 
@@ -64,6 +64,19 @@ ACCOUNT_EMAIL_VERIFICATION = "none"
 ACCOUNT_DEFAULT_HTTP_PROTOCOL = "https"
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_LOGIN_ON_GET = True
+
+# Обновляем настройки Google OAuth
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'APP': {
+            'client_id': os.environ.get('GOOGLE_OAUTH2_CLIENT_ID', ''),
+            'secret': os.environ.get('GOOGLE_OAUTH2_CLIENT_SECRET', ''),
+            'key': ''
+        },
+        'SCOPE': ['profile', 'email'],
+        'AUTH_PARAMS': {'access_type': 'online'}
+    }
+}
 
 # Настройки статических файлов
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')

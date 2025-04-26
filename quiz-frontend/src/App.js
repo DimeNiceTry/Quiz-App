@@ -131,7 +131,7 @@ function App() {
                             
                             // Простое перенаправление на URL авторизации
                             const loginUrl = process.env.NODE_ENV === 'production'
-                                ? "https://quiz-app-w21h.onrender.com/accounts/google/login/"
+                                ? "https://quiz-app-km8k.onrender.com/accounts/google/login/"
                                 : "http://localhost:8000/accounts/google/login/";
                             
                             console.log('Перенаправление на авторизацию Google:', loginUrl);

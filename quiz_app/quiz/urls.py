@@ -7,6 +7,7 @@ urlpatterns = [
     path('accounts/google/login/callback/', views.google_login_callback, name='google_login_callback'), #Убедитесь, что этот путь существует
     path('auth/check/', views.check_auth, name='check-auth'), # Новый маршрут для проверки аутентификации
     path('auth/logout/', views.logout_view, name='logout'), # Маршрут для выхода из системы
+    path('get-csrf-token/', views.get_csrf_token, name='get-csrf-token'),  # Новый маршрут для CSRF-токена
     path('quizzes/<int:pk>/details/', views.QuizDetail.as_view(), name='quiz-detail'),
     path('quizzes/<int:quiz_id>/questions/<int:question_index>/', views.get_question, name='quiz-question'),
     path('quiz-results/', views.UserQuizResults.as_view(), name='user-quiz-results'),

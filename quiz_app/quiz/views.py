@@ -13,6 +13,7 @@ from django.db.models import Q
 from django.contrib.auth import logout
 import copy
 import os
+from django.middleware.csrf import get_token
 
 def home(request):
     # Если пользователь уже вошел в систему, перенаправляем на фронтенд
@@ -325,3 +326,12 @@ def logout_view(request):
     response.delete_cookie('is_authenticated')
     
     return response
+
+@api_view(['GET'])
+def get_csrf_token(request):
+    """
+    Эндпоинт для получения CSRF-токена.
+    Полезно для AJAX-запросов с других доменов.
+    """
+    csrf_token = get_token(request)
+    return JsonResponse({'csrfToken': csrf_token})

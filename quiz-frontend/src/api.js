@@ -23,6 +23,7 @@ function getCookie(name) {
             }
         }
     }
+    console.log(`Получен cookie ${name}:`, cookieValue);
     return cookieValue;
 }
 
@@ -161,20 +162,34 @@ export const fetchQuizzes = async () => {
 // Пример POST запроса
 export const createQuiz = async (quizData) => {
     try {
+        // Получаем CSRF-токен перед отправкой запроса
+        const csrftoken = getCookie('csrftoken') || await fetchCSRFToken();
         console.log('Создание нового квиза:', quizData);
+        console.log('CSRF-токен:', csrftoken);
+
+        // Отправляем запрос на создание квиза
         const response = await fetch(`${API_URL}quizzes/`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'X-CSRFToken': getCookie('csrftoken')
+                'X-CSRFToken': csrftoken
             },
             credentials: 'include',
             body: JSON.stringify(quizData)
         });
 
+        console.log('Статус ответа:', response.status);
+        console.log('Заголовки ответа:', [...response.headers.entries()]);
+
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Ошибка: ${response.status}`);
+            let errorMessage = `Ошибка: ${response.status}`;
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.error || errorMessage;
+            } catch (e) {
+                console.error('Не удалось прочитать тело ошибки:', e);
+            }
+            throw new Error(errorMessage);
         }
 
         return await response.json();
@@ -408,4 +423,25 @@ export const logout = async () => {
     console.error('Ошибка при выходе из системы:', error);
     return false;
   }
+};
+
+// Функция для получения CSRF-токена с сервера
+export const fetchCSRFToken = async () => {
+    try {
+        const response = await fetch(`${API_URL}get-csrf-token/`, {
+            method: 'GET',
+            credentials: 'include',
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to fetch CSRF token: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('Получен CSRF-токен с сервера:', data.csrfToken);
+        return data.csrfToken;
+    } catch (error) {
+        console.error('Ошибка при получении CSRF-токена:', error);
+        return null;
+    }
 };

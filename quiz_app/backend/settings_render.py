@@ -7,7 +7,19 @@ DEBUG = False
 ALLOWED_HOSTS = ['*', 'quiz-app-km8k.onrender.com']  
 
 # Добавляем whitenoise для статических файлов
-MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # CORS должен быть первым
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+    'django.middleware.security.SecurityMiddleware',
+    'django.contrib.sessions.middleware.SessionMiddleware',
+    'django.middleware.common.CommonMiddleware',
+    'django.middleware.csrf.CsrfViewMiddleware',
+    'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'allauth.account.middleware.AccountMiddleware',
+    'quiz.middleware.CSRFMiddleware',  # Наш собственный middleware
+]
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # Настройки CORS для продакшн
@@ -15,9 +27,11 @@ CORS_ALLOWED_ORIGINS = [
     "https://dimenicetry.github.io",  # URL вашего GitHub Pages
 ]
 
-# Проверяем только определенное происхождение
-CORS_ALLOW_ALL_ORIGINS = False
+# Разрешаем запросы credentials с этого источника
 CORS_ALLOW_CREDENTIALS = True
+
+# Разрешить все заголовки в CORS-запросах
+CORS_ALLOW_ALL_HEADERS = True
 
 # Добавляем дополнительные настройки CORS для public URLs
 CORS_EXPOSE_HEADERS = [
@@ -54,10 +68,16 @@ CORS_PREFLIGHT_MAX_AGE = 86400  # 24 часа
 # Специфические URLs, которые должны поддерживать CORS
 CORS_URLS_REGEX = r'^.*$'  # Все URLs поддерживают CORS
 
+# Настройки CSRF
 CSRF_TRUSTED_ORIGINS = [
     "https://quiz-app-km8k.onrender.com",  # URL вашего бэкенда на Render
     "https://dimenicetry.github.io",  # URL вашего GitHub Pages
 ]
+CSRF_COOKIE_DOMAIN = None
+CSRF_USE_SESSIONS = False  # Храним CSRF в cookie
+CSRF_COOKIE_HTTPONLY = False  # Разрешаем JavaScript получать CSRF-токен
+CSRF_COOKIE_SAMESITE = 'None'  # Разрешаем кросс-сайтовые запросы
+CSRF_COOKIE_SECURE = True  # Только по HTTPS
 
 # Настройки перенаправлений
 LOGIN_REDIRECT_URL = 'https://dimenicetry.github.io/Quiz-App/#/quizzes?auth=success'  # URL вашего фронтенда

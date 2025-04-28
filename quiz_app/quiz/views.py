@@ -14,8 +14,11 @@ from django.contrib.auth import logout
 import copy
 import os
 from django.middleware.csrf import get_token
-from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.utils.decorators import method_decorator
+import logging
+
+logger = logging.getLogger(__name__)
 
 def home(request):
     # Если пользователь уже вошел в систему, перенаправляем на фронтенд
@@ -91,12 +94,28 @@ def google_login_callback(request):
 # Новый API-эндпоинт для проверки аутентификации
 @api_view(['GET'])
 def check_auth(request):
-    print(f"[check_auth] User authenticated: {request.user.is_authenticated}")
-    print(f"[check_auth] Session key: {request.session.session_key}")
-    print(f"[check_auth] Cookies: {request.COOKIES}")
+    """
+    API-эндпоинт для проверки аутентификации пользователя.
+    """
+    logger.info(f"[check_auth] User authenticated: {request.user.is_authenticated}")
+    logger.info(f"[check_auth] Session key: {request.session.session_key}")
+    logger.info(f"[check_auth] Cookies: {request.COOKIES}")
+    
+    # Добавляем заголовки запроса для отладки
+    for key, value in request.META.items():
+        if key.startswith('HTTP_'):
+            logger.debug(f"[check_auth] Header {key}: {value}")
+    
+    # Проверка наличия сессии
+    if not request.session.session_key:
+        # Создаем сессию, если её нет
+        request.session.save()
+        logger.info(f"[check_auth] Created new session: {request.session.session_key}")
     
     if request.user.is_authenticated:
-        return JsonResponse({
+        # Если у нас есть аутентифицированный пользователь, но нет cookie
+        # установим cookie, чтобы frontend мог проверить статус аутентификации
+        response = JsonResponse({
             'authenticated': True,
             'username': request.user.username,
             'email': request.user.email,
@@ -104,6 +123,21 @@ def check_auth(request):
             'is_staff': request.user.is_staff,
             'is_superuser': request.user.is_superuser
         })
+        
+        # Устанавливаем cookie для JS доступа
+        response.set_cookie(
+            'is_authenticated', 'true', 
+            httponly=False, 
+            secure=True, 
+            samesite='None',
+            max_age=2592000  # 30 дней
+        )
+        
+        # Добавляем CORS заголовки
+        response["Access-Control-Allow-Origin"] = "https://dimenicetry.github.io"
+        response["Access-Control-Allow-Credentials"] = "true"
+        
+        return response
     else:
         return JsonResponse({
             'authenticated': False,
@@ -133,10 +167,44 @@ class QuizListCreate(generics.ListCreateAPIView):
             return QuizCreateSerializer
         return QuizSerializer
 
+    def create(self, request, *args, **kwargs):
+        """
+        Переопределяем метод create для добавления дополнительного логирования
+        и обработки ошибок аутентификации
+        """
+        logger.info(f"[QuizListCreate] Пользователь: {request.user}, авторизован: {request.user.is_authenticated}")
+        logger.info(f"[QuizListCreate] Метод: {request.method}")
+        logger.info(f"[QuizListCreate] Данные: {request.data}")
+        logger.info(f"[QuizListCreate] Заголовки: {request.headers}")
+        
+        # Проверяем аутентификацию
+        if not request.user.is_authenticated:
+            logger.error("[QuizListCreate] Пользователь не авторизован")
+            return Response(
+                {"error": "Пользователь не авторизован"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
+        
+        # Проверка CSRF токена
+        csrf_token = request.META.get("HTTP_X_CSRFTOKEN")
+        logger.info(f"[QuizListCreate] CSRF токен в запросе: {csrf_token}")
+        
+        # Продолжаем стандартную обработку
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            serializer.data, 
+            status=status.HTTP_201_CREATED, 
+            headers=headers
+        )
+
     def perform_create(self, serializer):
         """
         Автоматически устанавливаем автора теста как текущего пользователя.
         """
+        logger.info(f"[QuizListCreate.perform_create] Сохраняем квиз с автором: {self.request.user}")
         serializer.save(author=self.request.user)
 
 
@@ -330,11 +398,30 @@ def logout_view(request):
     
     return response
 
-@api_view(['GET'])
+@api_view(['GET', 'OPTIONS'])
+@method_decorator(ensure_csrf_cookie, name='dispatch')
 def get_csrf_token(request):
     """
-    Эндпоинт для получения CSRF-токена.
-    Полезно для AJAX-запросов с других доменов.
+    Возвращает CSRF-токен. Устанавливает cookie с CSRF-токеном.
     """
+    # Устанавливаем CSRF в cookie через ensure_csrf_cookie decorator
     csrf_token = get_token(request)
-    return JsonResponse({'csrfToken': csrf_token})
+    logger.info(f"[get_csrf_token] Генерация CSRF токена: {csrf_token}")
+    
+    # Для OPTIONS запросов возвращаем пустой ответ со статусом 200
+    if request.method == 'OPTIONS':
+        response = Response(status=status.HTTP_200_OK)
+    else:
+        response = Response({'csrfToken': csrf_token})
+    
+    # Добавляем заголовки для CORS
+    response["Access-Control-Allow-Origin"] = "https://dimenicetry.github.io"
+    response["Access-Control-Allow-Credentials"] = "true"
+    response["Access-Control-Allow-Methods"] = "GET, POST, OPTIONS"
+    response["Access-Control-Allow-Headers"] = "Content-Type, X-CSRFToken"
+    response["Access-Control-Expose-Headers"] = "X-CSRFToken"
+    
+    # Добавляем токен в заголовок
+    response["X-CSRFToken"] = csrf_token
+    
+    return response

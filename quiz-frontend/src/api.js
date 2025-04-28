@@ -163,13 +163,35 @@ export const fetchQuizzes = async () => {
 export const createQuiz = async (quizData) => {
     try {
         // Получаем CSRF-токен перед отправкой запроса
-        // Принудительно запрашиваем токен с сервера
         await fetchCSRFToken();
-        // Затем получаем сохраненный токен
-        const csrftoken = globalCSRFToken || '';
+        
+        // Получаем сохраненный токен
+        const csrftoken = globalCSRFToken || getCookie('csrftoken') || '';
         
         console.log('Создание нового квиза:', quizData);
-        console.log('CSRF-токен:', csrftoken);
+        console.log('CSRF-токен для запроса:', csrftoken);
+        
+        // Проверяем аутентификацию
+        const auth = await checkAuthStatus();
+        if (!auth.authenticated) {
+            console.error('Пользователь не авторизован при создании квиза');
+            throw new Error('Необходимо авторизоваться для создания квиза');
+        }
+        
+        // Добавляем попытку предварительного запроса (preflight)
+        try {
+            const preflightResponse = await fetch(`${API_URL}quizzes/`, {
+                method: 'OPTIONS',
+                headers: {
+                    'Access-Control-Request-Method': 'POST',
+                    'Access-Control-Request-Headers': 'Content-Type, X-CSRFToken',
+                    'Origin': window.location.origin
+                }
+            });
+            console.log('Preflight response status:', preflightResponse.status);
+        } catch (preflightError) {
+            console.warn('Preflight request failed, но продолжаем:', preflightError);
+        }
 
         // Отправляем запрос на создание квиза
         const response = await fetch(`${API_URL}quizzes/`, {
@@ -429,48 +451,58 @@ export const logout = async () => {
   }
 };
 
-// Храним CSRF-токен в глобальной переменной для многократного использования
+// Глобальная переменная для хранения CSRF-токена
 let globalCSRFToken = null;
 
-// Функция для получения CSRF-токена с сервера
+// Функция для получения CSRF-токена
 export const fetchCSRFToken = async () => {
-    // Если у нас уже есть токен, используем его
-    if (globalCSRFToken) {
-        console.log('Используем кэшированный CSRF-токен:', globalCSRFToken);
-        return globalCSRFToken;
+  try {
+    console.log('Запрашиваем CSRF-токен с сервера...');
+
+    // Выполняем запрос для получения CSRF-токена
+    const response = await fetch(`${API_URL}get-csrf-token/`, {
+      method: 'GET',
+      credentials: 'include',  // Важно для сохранения куки
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Ошибка при получении CSRF-токена: ${response.status}`);
     }
 
-    // Пытаемся получить токен из cookie
-    const cookieToken = getCookie('csrftoken');
-    if (cookieToken) {
-        console.log('Используем CSRF-токен из cookie:', cookieToken);
-        globalCSRFToken = cookieToken;
-        return cookieToken;
+    // Проверяем заголовки на наличие токена
+    const csrfTokenHeader = response.headers.get('X-CSRFToken');
+    if (csrfTokenHeader) {
+      console.log('Получен CSRF-токен из заголовка:', csrfTokenHeader);
+      globalCSRFToken = csrfTokenHeader;
+      return csrfTokenHeader;
     }
 
-    try {
-        console.log('Запрашиваем CSRF-токен с сервера...');
-        const response = await fetch(`${API_URL}get-csrf-token/`, {
-            method: 'GET',
-            credentials: 'include',
-        });
-
-        console.log('Статус ответа на запрос CSRF:', response.status);
-        console.log('Заголовки ответа:', [...response.headers.entries()]);
-
-        if (!response.ok) {
-            throw new Error(`Failed to fetch CSRF token: ${response.status}`);
-        }
-
-        const data = await response.json();
-        console.log('Получен CSRF-токен с сервера:', data.csrfToken);
-        
-        // Сохраняем токен для последующего использования
-        globalCSRFToken = data.csrfToken;
-        
-        return data.csrfToken;
-    } catch (error) {
-        console.error('Ошибка при получении CSRF-токена:', error);
-        return null;
+    // Пробуем получить токен из тела ответа
+    const data = await response.json();
+    console.log('Ответ на запрос CSRF-токена:', data);
+    
+    if (data.csrfToken) {
+      console.log('Получен CSRF-токен из тела ответа:', data.csrfToken);
+      globalCSRFToken = data.csrfToken;
+      return data.csrfToken;
     }
+
+    // Проверяем cookie
+    const csrfCookie = getCookie('csrftoken');
+    if (csrfCookie) {
+      console.log('Получен CSRF-токен из cookie:', csrfCookie);
+      globalCSRFToken = csrfCookie;
+      return csrfCookie;
+    }
+
+    console.warn('CSRF-токен не найден ни в заголовке, ни в теле ответа, ни в cookie');
+    return null;
+  } catch (error) {
+    console.error('Ошибка при получении CSRF-токена:', error);
+    // В случае ошибки возвращаем null
+    return null;
+  }
 };

@@ -137,11 +137,35 @@ const CreateQuiz = () => {
         questions
       };
 
-      await createQuiz(quizData);
+      // Проверка аутентификации перед отправкой
+      const isAuthenticated = document.cookie.includes('is_authenticated=true');
+      if (!isAuthenticated) {
+        throw new Error('Необходимо авторизоваться для создания квиза');
+      }
+
+      console.log('Отправка данных квиза:', quizData);
+      const result = await createQuiz(quizData);
+      console.log('Результат создания квиза:', result);
+      
+      // Успешно создан
       navigate('/quizzes'); // Перенаправляем на страницу со списком квизов
     } catch (error) {
       console.error('Ошибка при создании квиза:', error);
-      setError('Произошла ошибка при создании квиза');
+      
+      // Более подробная обработка ошибок
+      let errorMessage = 'Произошла ошибка при создании квиза';
+      
+      if (error.message) {
+        if (error.message.includes('403')) {
+          errorMessage = 'Ошибка 403: Доступ запрещен. Возможно, проблема с CSRF-токеном или аутентификацией. Попробуйте перезагрузить страницу или войти снова.';
+        } else if (error.message.includes('401')) {
+          errorMessage = 'Ошибка 401: Необходимо авторизоваться. Пожалуйста, войдите в систему и попробуйте снова.';
+        } else {
+          errorMessage = `Ошибка: ${error.message}`;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

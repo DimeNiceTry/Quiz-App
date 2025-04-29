@@ -1,5 +1,6 @@
 from django.utils.deprecation import MiddlewareMixin
 from django.middleware.csrf import get_token
+from django.http import HttpResponse
 import logging
 
 logger = logging.getLogger(__name__)
@@ -13,7 +14,7 @@ class CSRFMiddleware(MiddlewareMixin):
         # Пропускаем OPTIONS запросы без проверки CSRF
         if request.method == 'OPTIONS':
             logger.info(f"[CSRFMiddleware] Пропускаем OPTIONS запрос")
-            return None
+            return HttpResponse(status=200)
             
         # Получаем CSRF-токен и сразу же устанавливаем в cookie
         csrf_token = get_token(request)

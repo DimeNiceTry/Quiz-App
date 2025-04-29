@@ -27,13 +27,8 @@ CORS_ALLOWED_ORIGINS = [
     "https://dimenicetry.github.io",  # URL вашего GitHub Pages
 ]
 
-# Для тестирования - отключаем стандартную обработку CSRF 
-# Это не рекомендуется для продакшн, но поможет выявить проблему
-CSRF_COOKIE_NAME = 'csrftoken'
-CSRF_HEADER_NAME = 'HTTP_X_CSRFTOKEN'
-CSRF_FAILURE_VIEW = 'django.views.csrf.csrf_failure'
-
-# Разрешаем запросы credentials с этого источника
+# Настройки CORS
+CORS_ALLOW_ALL_ORIGINS = False  # Не разрешаем все источники
 CORS_ALLOW_CREDENTIALS = True
 
 # Разрешить все заголовки в CORS-запросах

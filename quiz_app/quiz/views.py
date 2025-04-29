@@ -399,7 +399,7 @@ def logout_view(request):
     return response
 
 @api_view(['GET', 'OPTIONS'])
-@method_decorator(ensure_csrf_cookie, name='dispatch')
+@ensure_csrf_cookie
 def get_csrf_token(request):
     """
     Возвращает CSRF-токен. Устанавливает cookie с CSRF-токеном.
